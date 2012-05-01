@@ -151,31 +151,56 @@
         <header>
             <h1>The CSS</h1>
         </header>
-<pre>nav { border: 2px solid #000; margin: 0px 20px; position: relative; }
-nav ul { padding: 0; margin: 0; list-style: none; transition:all .2s linear;  -o-transition:all .2s linear;  -moz-transition:all .2s linear;  -webkit-transition:all .2s linear; }
-nav ul li:first-child { border-top: 0px; }
-nav ul li { display: block; border-top: 2px solid #000; }
+<pre>nav.mobile { position: relative; }
+nav.mobile ul { transition:all .2s linear;  -o-transition:all .2s linear;  -moz-transition:all .2s linear;  -webkit-transition:all .2s linear; }
+nav.mobile ul li:first-child { border-top: 0px; }
+nav.mobile ul li { display: block; border-top: 2px solid #000; }
+nav.mobile ul li ul {left: 200%; }
+nav.mobile ul li ul.slider-current { left: 100%; }
+nav.mobile ul li ul.slider-left { left: 0; }
+nav.mobile ul li ul.slider-right { left: 200%; }
+
+nav.desktop ul li { display: inline-block; position: relative; }
+nav.desktop ul li ul { position: absolute; left: -2px; border: 2px solid #000; display: none; padding: 4px; background: #ccc; }
+nav.desktop ul li ul:after { top: -7px; left: 40px; z-index:6; border-width: 0 7px 7px; border-color: #ccc transparent; content: ""; position:absolute; border-style:solid; display:block; width: 0; }
+nav.desktop ul li ul:before { top: -10px; left: 38px; z-index:5; border-width: 0 9px 9px; border-color: #000 transparent; content: ""; position:absolute; border-style:solid; display:block; width: 0;  }
+nav.desktop ul li ul { width: 300px; }
+nav.desktop ul li ul li { display: block; }
+nav.desktop ul li ul li ul { display: none; }
+
+nav { border: 2px solid #000; margin: 0px 20px;}
+nav ul { padding: 0; margin: 0; list-style: none; }
 nav ul li a { display: block; padding: 10px; background: #fff; color: #000; text-decoration: none; }
 nav ul li a strong { float: right; font-size: 8px; margin-top: 5px; }
-nav ul li a.back { background: #ccc; text-align: right;}
-nav ul li a.back strong { float:left; }
+nav ul li a.slider-back { background: #ccc; text-align: right;}
+nav ul li a.slider-back strong { float:left; }
 nav ul li a:hover { background: #000; color: #fff; }
 nav ul.slider-current { left: 0px; display: block;}
 nav ul.slider-left { left: -100%; }
-nav ul.slider-right { left: 100%; }
-nav ul li ul {left: 200%; }
-nav ul li ul.slider-current { left: 100%; }
-nav ul li ul.slider-left { left: 0; }
-nav ul li ul.slider-right { left: 200%; }</pre>
+nav ul.slider-right { left: 100%; }</pre>
     </section>
     <section>
         <header>
             <h1>The Javascript</h1>
         </header>
-        <pre>$(document).ready(function()
+<pre>
+$(document).ready(function()
 {
-    $(&#39;nav&#39;).slider();
-});</pre>
+    var navElement = $('nav');
+    navElement.slider().multilevel().responder({ 
+        breakpoints: [
+            new $.responsive.Breakpoint(0, "mobile", function() { 
+                navElement.trigger('destroymultilevel'); 
+                navElement.trigger('createslider'); 
+            }),
+            new $.responsive.Breakpoint(767, "desktop", function() { 
+                navElement.trigger('destroyslider'); 
+                navElement.trigger('createmultilevel'); 
+            })
+        ]
+    });
+});
+</pre>
     </section>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script src="https://raw.github.com/Lane/Responder/master/responder.min.js"></script>
