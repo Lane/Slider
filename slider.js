@@ -31,6 +31,8 @@ Description:	Displays nested lists of links as a sliding menu
 		var currentNav = $('ul:first', base.el);
 		
 		var transitionsSupported = false;
+		var isCreated = false;
+        var isAnimating = false;
 
 		base.init = function () {
 			base.options = $.extend({}, $.responsive.slider.defaultOptions, options);
@@ -43,9 +45,10 @@ Description:	Displays nested lists of links as a sliding menu
 				base.destroy();
 			});
 			
-			transitionSupported = base.transitionSupport();
+			transitionsSupported = base.transitionSupport();
 			
-			base.create();
+			if(base.options.initPlugin)
+				base.create();
 		};
 		
 		// item - list item containing the sub menu
@@ -53,28 +56,34 @@ Description:	Displays nested lists of links as a sliding menu
 			var currUl = currentNav;
 			var nextUl = item.siblings("ul:first");
 			var divContainer = false;
-			
-			if(nextUl.length < 1)
-			{
-				divContainer = item.siblings("div");
-				nextUl = $("ul:first", divContainer);
-			}
-			
-			nextUl.prepend('<li><a class="'+base.options.classPrefix+'back'+'" href="#">'+base.options.backWording+' '+item.html()+'</a></li>');
-			$('a.'+base.options.classPrefix+'back'+' strong', nextUl).html(base.options.prevArrow);
 
-			if(!transitionsSupported)
+            if(!isAnimating)
 			{
-				nextUl.css("left", nextUl.position().left+"px");
-				nextUl.animate({ left: "0" }, base.options.transitionTime, "linear", function()
-				{
-					base.switchClassesNext(currUl, nextUl);
-				});
-			} else {
-				base.switchClassesNext(currUl, nextUl);
-			}
+                isAnimating = true;
+                if(nextUl.length < 1)
+                {
+                    divContainer = item.siblings("div");
+                    nextUl = $("ul:first", divContainer);
+                }
+                
+                nextUl.prepend('<li><a class="'+base.options.classPrefix+'back'+'" href="#">'+base.options.backWording+' '+item.html()+'</a></li>');
+                $('a.'+base.options.classPrefix+'back'+' strong', nextUl).html(base.options.prevArrow);
+
+                if(!transitionsSupported)
+                {
+                    nextUl.css("left", nextUl.position().left+"px");
+                    nextUl.animate({ left: "0" }, base.options.transitionTime, "linear", function()
+                    {
+                        base.switchClassesNext(currUl, nextUl);
+                        isAnimating = false;
+                    });
+			    } else {
+				    base.switchClassesNext(currUl, nextUl);
+                    isAnimating = false;
+			    }
 			
-			currentNav = nextUl;
+			    currentNav = nextUl;
+            }
 		};
 		
 		base.goToParent = function() {
@@ -83,23 +92,27 @@ Description:	Displays nested lists of links as a sliding menu
 			var prevUl = currUl.parents("ul:first"); // get first parent <ul>
 			var moveLeft; // value to animate left to
 			
-			if(!transitionsSupported)
-			{
-				if(prevUl.position().left < 0)
-					moveLeft = "0";
-				else
-					moveLeft = "100%";
-					
-				prevUl.css("left", prevUl.position().left+"px");
-				prevUl.animate({ left: moveLeft }, base.options.transitionTime, "linear", function()
-				{
-					base.switchClassesPrevious(currUl, prevUl);
-				});
-			} else {
-				base.switchClassesPrevious(currUl, prevUl);
-			}
-			
+            if(!isAnimating) {
+                isAnimating = true;
+                if(!transitionsSupported) {
+                    if(prevUl.position().left < 0)
+                        moveLeft = "0";
+                    else
+                        moveLeft = "100%";
+                        
+                    prevUl.css("left", prevUl.position().left+"px");
+                    prevUl.animate({ left: moveLeft }, base.options.transitionTime, "linear", function()
+                    {
+                        base.switchClassesPrevious(currUl, prevUl);
+                        isAnimating = false;
+                    });
+			    } else {
+				    base.switchClassesPrevious(currUl, prevUl);
+                    isAnimating = false;
+			    }
 			currentNav = prevUl;
+            }
+			
 		};
 		
 		
@@ -135,37 +148,41 @@ Description:	Displays nested lists of links as a sliding menu
 		
 		base.create = function(){
 
-			base.$el.css('overflow', 'hidden');
+			if(!isCreated) {
+				base.$el.css('overflow', 'hidden');
+				
+				$('ul', base.el).css({ 
+					'position': 'absolute', 
+					'width': '100%', 
+					'top': '0px' 
+				});
+				
+				base.$el.find("ul:first").addClass(base.options.classPrefix+'current');
+				
+				base.$el.css({
+					height: base.$el.find("ul:first").height()
+				});
+				
+				$("li", base.el).each(function() {
+					if($(this).children("ul").length > 0 || $(this).children('div').children('ul').length > 0)
+					{
+						$(this).children("ul","div").addClass(base.options.classPrefix+'right');
+						$(this).children("a").append('<strong>'+base.options.moreArrow+'</strong>').addClass(base.options.classPrefix+'more');
+					}
+				});
 			
-			$('ul', base.el).css({ 
-				'position': 'absolute', 
-				'width': '100%', 
-				'top': '0px' 
-			});
-			
-			base.$el.find("ul:first").addClass(base.options.classPrefix+'current');
-			
-			base.$el.css({
-				height: base.$el.find("ul:first").height()
-			});
-			
-			$("li", base.el).each(function() {
-				if($(this).children("ul").length > 0 || $(this).children('div').children('ul').length > 0)
-				{
-					$(this).children("ul","div").addClass(base.options.classPrefix+'right');
-					$(this).children("a").append('<strong>'+base.options.moreArrow+'</strong>').addClass(base.options.classPrefix+'more');
-				}
-			});
-		
-			base.$el.on("click", "a."+base.options.classPrefix+'more', function() {
-				base.goToNext($(this));
-				return false;
-			});
-			
-			base.$el.on("click", "a."+base.options.classPrefix+'back', function () {
-				base.goToParent();
-				return false;
-			});
+				base.$el.on("click", "a."+base.options.classPrefix+'more', function() {
+					base.goToNext($(this));
+					return false;
+				});
+				
+				base.$el.on("click", "a."+base.options.classPrefix+'back', function () {
+					base.goToParent();
+					return false;
+				});
+				
+				isCreated = true;
+			}
 		};
 		
 		base.destroy = function() {
@@ -177,6 +194,8 @@ Description:	Displays nested lists of links as a sliding menu
 			$('.'+base.options.classPrefix+'more'+' strong', base.el).remove();
 			$('.'+base.options.classPrefix+'more', base.el).removeClass(base.options.classPrefix+'more');
 			$('ul', base.el).removeAttr('style');
+            $('.'+base.options.classPrefix+'back').parent().remove();
+			isCreated = false;
 		};
 		
 		base.init();
@@ -187,7 +206,8 @@ Description:	Displays nested lists of links as a sliding menu
 		transitionTime: 200,
 		backWording: "Back to",
 		moreArrow: "&#x25B6;",
-		prevArrow: "&#x25C0;"
+		prevArrow: "&#x25C0;",
+		initPlugin: false
 		// TODO: Add option for max levels
 	};
 	
